@@ -1,0 +1,37 @@
+name: Daily Stock Fetcher
+
+on:
+  schedule:
+    # Runs at 10:30 UTC (which is 4:00 PM IST - Market Close)
+    - cron: '30 10 * * *'
+  # Allows you to click "Run Now" manually to test it
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Critical: Allows the robot to save the CSV
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install libraries
+        run: |
+          pip install pandas yfinance requests
+
+      - name: Run Fetch Script
+        run: |
+          python fetch_data.py
+
+      - name: Commit and Push Data
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "📈 Auto-updated stock data"
+          file_pattern: data/*.csv
