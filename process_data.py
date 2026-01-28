@@ -35,6 +35,9 @@ except FileNotFoundError:
 # ---------------------------------------------------------
 df['Daily_Return'] = df.groupby('Ticker')['Price'].pct_change()
 
+# Fill NaNs (first day of data) with 0 to prevent calculation errors
+df['Daily_Return'] = df['Daily_Return'].fillna(0)
+
 risk_profile = df.groupby(['Ticker', 'Sector'])['Daily_Return'].std() * np.sqrt(252) * 100
 risk_profile = risk_profile.reset_index()
 risk_profile.columns = ['Ticker', 'Sector', 'Volatility_Annual_Pct']
@@ -71,10 +74,12 @@ signals[['Ticker', 'Price', 'MA50', 'MA_Diff_Pct', 'Trend']].to_csv(signals_path
 print("✅ Signals Saved")
 
 # ---------------------------------------------------------
-# 4. CALCULATE GROWTH (Leaderboard) - FIXED
+# 4. CALCULATE GROWTH (Leaderboard) - BULLETPROOF FIX
 # ---------------------------------------------------------
-# We use .transform() here to ensure the index matches the original dataframe
-df['Cumulative_Growth'] = df.groupby('Ticker')['Daily_Return'].transform(lambda x: (1 + x).cumprod())
+# We use direct .cumprod() on the group, which preserves the index perfectly.
+# No .transform() needed here.
+df['Cumulative_Growth'] = (1 + df['Daily_Return']).groupby(df['Ticker']).cumprod()
+
 df['Investment_Value_Numeric'] = (df['Cumulative_Growth'] * 100000).round(0)
 
 growth_path = os.path.join(base_dir, 'data', 'stock_growth.csv')
