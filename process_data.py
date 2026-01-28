@@ -14,13 +14,14 @@ try:
     # ---------------------------------------------------------
     # 1.1 THE FIX: RENAME 'Close' TO 'Price'
     # ---------------------------------------------------------
-    # Yahoo Finance gives 'Close', but our math expects 'Price'
+    # Yahoo Finance usually gives 'Close' or 'Adj Close'
+    # We rename it to 'Price' so the rest of our math works.
     if 'Close' in df.columns:
         df.rename(columns={'Close': 'Price'}, inplace=True)
     elif 'Adj Close' in df.columns:
         df.rename(columns={'Adj Close': 'Price'}, inplace=True)
         
-    # Verify the fix worked
+    # Safety Check: Did the rename work?
     if 'Price' not in df.columns:
         print(f"❌ Error: Still cannot find 'Price' column. Available columns: {df.columns.tolist()}")
         exit(1)
