@@ -21,7 +21,8 @@ st.caption(
 # ---------------------------------------------------
 # DATA LOADING
 # ---------------------------------------------------
-@st.cache_data(show_spinner=True)
+@st.cache_data(show_spinner=True, ttl="2h")
+
 def load_data():
     signals = pd.read_csv("data/stock_signals.csv")
     risk = pd.read_csv("data/stock_risk.csv")
