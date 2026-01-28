@@ -4,13 +4,33 @@ import os
 
 # 1. Load Data
 try:
-    df = pd.read_csv('data/nifty50_sectors.csv')
+    # Use absolute path to be safe in GitHub Actions
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, 'data', 'nifty50_sectors.csv')
+    
+    df = pd.read_csv(file_path)
     df['Date'] = pd.to_datetime(df['Date'])
+    
+    # ---------------------------------------------------------
+    # 1.1 THE FIX: RENAME 'Close' TO 'Price'
+    # ---------------------------------------------------------
+    # Yahoo Finance gives 'Close', but our math expects 'Price'
+    if 'Close' in df.columns:
+        df.rename(columns={'Close': 'Price'}, inplace=True)
+    elif 'Adj Close' in df.columns:
+        df.rename(columns={'Adj Close': 'Price'}, inplace=True)
+        
+    # Verify the fix worked
+    if 'Price' not in df.columns:
+        print(f"❌ Error: Still cannot find 'Price' column. Available columns: {df.columns.tolist()}")
+        exit(1)
+
     df.sort_values(['Ticker', 'Date'], inplace=True)
-    print("✅ Raw Data Loaded")
+    print("✅ Raw Data Loaded & Renamed Successfully")
+
 except FileNotFoundError:
     print("❌ Raw data not found. Run fetch_data.py first.")
-    exit()
+    exit(1)
 
 # ---------------------------------------------------------
 # 2. CALCULATE RISK (Volatility)
@@ -29,7 +49,8 @@ risk_profile['Return_Annual_Pct'] = avg_return.values.round(2)
 risk_profile['Volatility_Annual_Pct'] = risk_profile['Volatility_Annual_Pct'].round(2)
 
 # Save
-risk_profile.to_csv('data/stock_risk.csv', index=False)
+risk_path = os.path.join(base_dir, 'data', 'stock_risk.csv')
+risk_profile.to_csv(risk_path, index=False)
 print("✅ Risk Profile Saved")
 
 # ---------------------------------------------------------
@@ -56,7 +77,8 @@ choices = ['Strong Bullish 🚀', 'Weak Bullish ↗️', 'Strong Bearish 🩸', 
 signals['Trend'] = np.select(conditions, choices, default='Neutral')
 
 # Save
-signals[['Ticker', 'Price', 'MA50', 'MA_Diff_Pct', 'Trend']].to_csv('data/stock_signals.csv', index=False)
+signals_path = os.path.join(base_dir, 'data', 'stock_signals.csv')
+signals[['Ticker', 'Price', 'MA50', 'MA_Diff_Pct', 'Trend']].to_csv(signals_path, index=False)
 print("✅ Signals Saved")
 
 # ---------------------------------------------------------
@@ -67,7 +89,8 @@ df['Cumulative_Growth'] = df.groupby('Ticker')['Daily_Return'].apply(lambda x: (
 df['Investment_Value_Numeric'] = (df['Cumulative_Growth'] * 100000).round(0)
 
 # Save
-df[['Date', 'Ticker', 'Investment_Value_Numeric']].to_csv('data/stock_growth.csv', index=False)
+growth_path = os.path.join(base_dir, 'data', 'stock_growth.csv')
+df[['Date', 'Ticker', 'Investment_Value_Numeric']].to_csv(growth_path, index=False)
 print("✅ Growth Data Saved")
 
 # ---------------------------------------------------------
@@ -77,5 +100,6 @@ pivot_df = df.pivot(index='Date', columns='Ticker', values='Daily_Return')
 corr_matrix = pivot_df.corr()
 
 # Save
-corr_matrix.to_csv('data/stock_correlation.csv')
+corr_path = os.path.join(base_dir, 'data', 'stock_correlation.csv')
+corr_matrix.to_csv(corr_path)
 print("✅ Correlation Matrix Saved")
