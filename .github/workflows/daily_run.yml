@@ -1,17 +1,15 @@
-name: Daily Stock Fetcher
+name: Daily Stock Pipeline
 
 on:
   schedule:
-    # Runs at 10:30 UTC (which is 4:00 PM IST - Market Close)
-    - cron: '30 10 * * *'
-  # Allows you to click "Run Now" manually to test it
-  workflow_dispatch:
+    - cron: '30 10 * * *' # 4:00 PM IST
+  workflow_dispatch:      # Manual Trigger
 
 jobs:
-  build:
+  run-pipeline:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Critical: Allows the robot to save the CSV
+      contents: write
 
     steps:
       - name: Checkout code
@@ -24,14 +22,18 @@ jobs:
 
       - name: Install libraries
         run: |
-          pip install pandas yfinance requests
+          pip install pandas yfinance requests numpy
 
-      - name: Run Fetch Script
+      - name: 1. Fetch Data
         run: |
           python fetch_data.py
 
-      - name: Commit and Push Data
+      - name: 2. Process Data (Risk, Signals, Growth)
+        run: |
+          python process_data.py
+
+      - name: Commit and Push Results
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "📈 Auto-updated stock data"
+          commit_message: "🤖 Auto-Update: Data & Analysis"
           file_pattern: data/*.csv
