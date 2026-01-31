@@ -43,6 +43,12 @@ for sector, stock_list in tickers.items():
 
             all_data.append(df)
 
+
+if not all_data:
+    print("Market closed or no data. Skipping save.")
+    exit()
+
+
 # 4. Merge into one Master DataFrame
 if all_data:
     final_df = pd.concat(all_data)
